@@ -1,0 +1,192 @@
+<script type="text/javascript">
+
+jQuery(function () {
+		var plot_data = new Array();
+
+		// Frequency (stacked bar)
+		var frequency_data = <%= raw graph_data(nil, @amount_ago, @unit_ago).to_json %>;
+		var sorted_activities = <%= raw Workout::RANKED_ACTIVITIES.to_json %>
+		var colors = {
+			erging: "rgb(255, 153, 31)",
+			running: "rgb(0, 102, 0)",
+			swimming: "rgb(0, 102, 204)",
+			biking: "rgb(153, 0, 0)",
+			lifting: "rgb(153, 153, 255)",
+			other:"rgb(153, 102, 0)"
+		};
+		for (index in sorted_activities) {
+			var activity = sorted_activities[index];
+			if (frequency_data[activity]) {
+				plot_data.push({ data: frequency_data[activity], label: activity });
+			}
+		}
+
+		var last_monday = new Date();
+		last_monday = new Date(last_monday.getTime() - ((last_monday.getDay() + 6) % 7) * 60 * 60 * 24 * 1000);
+		var dates = new Array(frequency_data["erging"].length);
+		for (var i = dates.length - 1; i >= 0; i-= Math.ceil(dates.length / 10)) {
+			monday = new Date(last_monday.getTime() - (dates.length - i - 1) * 7 * 60 * 60 * 24 * 1000);
+			dates[i] = [i + 0.4, (monday.getMonth() + 1) + "/" + monday.getDate()];
+		}
+
+		jQuery.plot(jQuery("#frequency_plot"), plot_data, {
+			xaxis: { tickColor: "#eee", ticks: dates },
+			yaxis: { min: 0, max: 7, tickSize: 1, tickColor: "#eee" },
+			series: { stack: true, colors: [{ opacity: 0.8 }] },
+			legend: { 
+				position: "ne",
+				backgroundOpacity: 0.2,
+				noColumns: 3, 
+				labelFormatter: function(label, series) { 
+					return "<span style='margin-right:15px;'>" + label + "</span>"; 
+				}
+			},
+			bars: { show: true, barWidth: 0.8, lineWidth: 0, fill: 0.5 },
+			grid: { aboveData: false, hoverable: true },
+			shadowSize: 2
+		});
+
+		// Running (scatter plot)
+    var running_data = <%= raw graph_data("running", @amount_ago, @unit_ago).to_json %>;
+
+		var max_y = maxY(running_data);
+		max_y = roundUpToNearest(max_y, 1800);
+		var max_x = maxX(running_data);
+		var pace_data = [[0, 0], [max_y / 492, max_y]];		// 8:12 per mile
+
+    jQuery.plot(jQuery("#running_plot"), [ 
+			{ data: pace_data, lines: { show: true }, hoverable: false, label: "8:12/mi", points: { show: false }, color: "rgb(240, 240, 240)" },
+      { data: running_data, lines: { show: false }, points: { show: true, symbol: "cross" }, color: "rgb(0, 102, 153)" }
+    ], {
+			grid: { hoverable: true, clickable: false },
+			xaxis: { min: 0 },
+			yaxis: { min: 0, max: max_y, tickSize: max_y / 5, tickFormatter: formatTime },
+			legend: { position: "se" }
+    });
+
+		// Erging (line graph)
+		var erging_data = <%= raw graph_data("erging", @amount_ago, @unit_ago).to_json %>;
+		plot_data = new Array();
+		var max_y = 0;
+		for (distance in erging_data) {
+			var local_max_y = maxY(erging_data[distance]);
+			if (local_max_y > max_y) {
+				max_y = local_max_y;
+			}
+			plot_data.push({ data: erging_data[distance], label: distance, lines: { show: true }, points: { show: true } });
+		}
+		jQuery.plot(jQuery("#erging_plot"), plot_data, {
+			grid: { hoverable: true, clickable: false },
+			xaxis: { mode: "time", timeformat: "%m/%d" },
+			yaxis: { min: 120, max: 150, tickSize: 5, tickFormatter: formatTime },
+			legend: { position: "nw" }
+		});
+
+		// Hover behavior
+		var tooltips = new Array(2);
+		tooltips["running_plot"] = <%= raw graph_tooltips("running", @amount_ago, @unit_ago).to_json %>;
+		tooltips["erging_plot"] = <%= raw graph_tooltips("erging", @amount_ago, @unit_ago).to_json %>;
+		var previous_index = null;
+		jQuery("#running_plot, #erging_plot").bind("plothover", function(event, pos, item) {
+			var plot_id = jQuery(this).attr("id");
+			if (item) {
+				if (item) {
+					if (previous_index != item.dataIndex) {
+						previous_index = item.dataIndex;
+						jQuery("#tooltip").remove();
+						var text;
+						if (plot_id.match(/^erg/i)) {
+							text = tooltips[plot_id][item.series.label][item.dataIndex];
+						}
+						else {
+							text = tooltips[plot_id][item.dataIndex];
+						}
+						if (text) {
+							showTooltip(item.pageX, item.pageY, text);
+						}
+					}
+				}
+				else {
+					previous_index = null;
+					jQuery("#tooltip").remove();
+				}
+			}
+			else {
+				jQuery("#tooltip").remove();
+				previous_index = null;
+			}
+		});
+
+	jQuery("#tabs").tabs({
+		collapsible: true,
+	});
+});
+</script>
+
+<div id="tabs" style="width:450px;">
+	<ul>
+		<li><a href="#tabs_frequency">Frequency</a></li>
+		<li><a href="#tabs_running">Running</a></li>
+		<li><a href="#tabs_erging">Erging</a></li>
+	</ul>
+	<div id="tabs_frequency">
+		<div id="frequency_plot" class="graph"></div>
+	</div>
+	<div id="tabs_running">
+		<div id="running_plot" class="graph"></div>
+	</div>
+	<div id="tabs_erging">
+		<div id="erging_plot" class="graph"></div>
+	</div>
+</div>
+
+</div>
+
+<p>
+
+<% form_tag days_path, :method => :get do %>
+	Showing
+	<%= select_tag(:activity, "<option value=''>all activities</option>".html_safe + select_options_from_array(Workout.activities, params[:activity])) %>
+	in past 
+	<%= text_field_tag :amount_ago, @amount_ago, :size => 2 %>
+	<%= select_tag(:unit_ago, select_options_from_array(["weeks","months", "years"], @unit_ago)) %>
+	<%= submit_tag 'Filter' %>
+<% end %>
+
+<% if (Backup.time_for_backup) %>
+  <div class="notice">Last download was <%= Backup.last_backup.strftime("%a %m/%d") %>. 
+  <%= button_to 'Download All', :controller => "backups", :action => "get_backup" %></div>
+<% end %>
+<table class="data">
+  <tr>
+    <th>Day <%= link_to '(+)', new_day_path %></th>
+    <th>Workout</th>
+    <th>Notes</th>
+    <th></th>
+  </tr>
+
+<% @days.each do |day| %>
+  <tr class="<%= cycle('row-even', 'row-odd') %>">
+    <td style="white-space: nowrap;"><%= day.day_string %></td>
+		<td style="white-space: nowrap;">
+    	<% day.workouts.each do | workout | %>
+				<%= workout.activity %>
+				<%= workout.detail_string %>
+				<%= raw workout_links(workout) %>
+				<br>
+			<% end %>
+      <%= link_to '(+)', :controller => "workouts", :action => "new", :day_id => day.id %>
+		</td>
+    <td><%= day.notes %></td>
+    <td style="white-space: nowrap;">
+			<%= link_to '(edit)', edit_day_path(day) %>
+    	<%= link_to '(x)', day, :confirm => "Are you sure? All of this day's workouts will also be deleted.", :method => :delete %>
+		</td>
+  </tr>
+<% end %>
+</table>
+
+<% if (!Backup.time_for_backup) %>
+  <p>Last download was <%= Backup.last_backup.strftime("%a %D") %>. 
+  <%= button_to 'Download All', :controller => "backups", :action => "get_backup" %>
+<% end %>

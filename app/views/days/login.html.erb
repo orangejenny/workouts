@@ -1,0 +1,21 @@
+<script type="text/javascript">
+
+jQuery(function() {
+	jQuery('#login').dialog({
+		modal: true,
+		beforeClose: function() {
+			return false;
+		},
+		buttons: {
+			"Log In": function() {
+				alert('log me in!');
+			}
+		}
+	});
+});
+
+</script>
+
+<div id=login title='Log In'>
+	Who are you?
+</div>

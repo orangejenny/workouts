@@ -1,0 +1,17 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  type: MyString
+  time: 1
+  meters: 
+  sets: 1
+  reps: 1
+  weight: 
+
+two:
+  type: MyString
+  time: 1
+  meters: 
+  sets: 1
+  reps: 1
+  weight: 

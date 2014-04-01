@@ -1,0 +1,131 @@
+<script>
+  jQuery(function() {
+    jQuery("#activity_row input:text").autocomplete({
+      source: <%= raw Workout.activities.to_json  %>
+    });
+  	jQuery("input:text:first").focus();
+  });
+</script>
+
+<%= form_for(@workout) do |f| %>
+  <% if @workout.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@workout.errors.count, "error") %> prohibited this workout from being saved:</h2>
+
+      <ul>
+      <% @workout.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+	<table class="dataentry">
+		<tr>
+			<td class="field">
+				Day
+			</td>
+			<td>
+				<%= @day.day_string %>
+			</td>
+		</tr>
+		<tr>
+			<td class="field">
+				Notes
+			</td>
+			<td>
+				<%= @day.notes %>
+			</td>
+		</tr>
+		<% if @day.workouts.size > 1 %>
+		<tr>
+			<td class="field">
+				Other Workouts
+			</td>
+			<td>
+				<% if (@day.workouts.empty?) %>
+					(none)
+				<% end %>
+				<% @day.workouts.each do |w| %>
+					<% if w.id !=  @workout.id %>
+						<%= w.activity %>
+						<%= w.detail_string %>
+						<%= raw workout_links(w) %>
+						<br>
+					<% end %>
+				<% end %>
+			</td>
+		</tr>
+		<% end %>
+		<tr id="activity_row">
+			<td class="field">
+    		<%= f.label :activity %>
+			</td>
+			<td>
+    		<%= f.text_field :activity, :onBlur => 'selectActivity(this.value)', :size => 10 %>
+			</td>
+		</tr>
+		<tr id="distance_row" style="<%= @workout.activity.blank? || @workout.might_have_pace ? "" : "display: none;" %>">
+			<td class="field">
+    		<%= f.label :distance %><br />
+			</td>
+			<td>
+				<div style="float: left;">
+    			<%= f.text_field :distance, :size => 5, :onBlur => 'setPace()' %>
+				</div>
+				<div style="float: left; margin-left: 10px;">
+					<% Workout::DISTANCE_UNITS.each do |k, v| %>
+    				<div><%= f.radio_button(:unit, k) + " " + v %></div>
+					<% end %>
+				</div>
+  		</td>
+		</tr>
+		<tr id="time_row" style="<%= @workout.activity.blank? || @workout.might_have_pace ? "" : "display: none;" %>">
+			<td class="field">
+    		Time
+			</td>
+			<td>
+    		<%= f.text_field :hours, :size => 2, :onBlur => 'setPace()' %>:
+				<%= f.text_field :minutes, :size => 2, :onBlur => 'setPace()' %>:
+				<%= f.text_field :seconds, :size => 2, :onBlur => 'setPace()' %>
+			</td>
+		</tr>
+		<tr id="pace_row" style="<%= !@workout.activity.blank? || @workout.might_have_pace ? "" : "display: none;" %>i">
+			<td class="field">
+				Pace
+			</td>
+			<td><%= @workout.pace_string %></td>
+		</tr>
+		<tr id="sets_row" style="<%= !@workout.activity.blank? && @workout.might_have_pace ? "display: none;" : "" %>">
+			<td class="field">
+    		<%= f.label :sets %><br />
+			</td>
+			<td>
+    		<%= f.text_field :sets, :size => 5 %>
+			</td>
+		</tr>
+		<tr id="reps_row">
+			<td class="field">
+    		<%= f.label :reps %><br />
+			</td>
+			<td>
+    		<%= f.text_field :reps, :size => 5 %>
+			</td>
+		</tr>
+		<tr id="weight_row" style="<%= !@workout.activity.blank? && @workout.might_have_pace ? "display: none;" : "" %>">
+			<td class="field">
+    		<%= f.label :weight %><br />
+			</td>
+			<td>
+    		<%= f.text_field :weight, :size => 5 %>
+			</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td class="actions">
+    		<%= f.hidden_field :day_id, :value => @workout.day_id %>
+		    <%= f.submit %>
+				<%= button_to_function 'Cancel', "window.location = '" + days_path + "';" %>
+			</td>
+		</tr>
+<% end %>

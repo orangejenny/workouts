@@ -1,0 +1,68 @@
+<script type="text/JavaScript">
+
+jQuery(function() {
+	jQuery("input:text:first").focus();
+});
+
+</script>
+
+<%= form_for(@day) do |f| %>
+  <% if @day.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@day.errors.count, "error") %> prohibited this day from being saved:</h2>
+
+      <ul>
+      <% @day.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+	<table class="dataentry">
+		<tr>
+  		<td class="field">
+  		  <%= f.label :day_string, "Day" %>
+			</td>
+			<td>
+  		  <%= f.text_field :day_string %>
+			</td>
+		</tr>
+		<tr>
+			<td class="field">
+    		<%= f.label :notes %>
+			</td>
+			<td>
+		    <%= f.text_area :notes, :size => "30x5" %>
+			</td>
+		</tr>
+		<% if !@day.workouts.empty? %>
+		<tr>
+			<td class="field">
+				Workouts
+			</td>
+			<% if (!@day.id.blank?) %>
+	    <td>
+	      <% @day.workouts.each do | workout | %>
+	        <%= workout.activity + " " + workout.detail_string %><br>
+	      <% end %>
+	      	<%= link_to '(+)', :controller => "workouts", :action => "new", :day_id => @day.id %>
+	    </td>
+			<% end %>
+	    <td>
+	      <% @day.workouts.each do | workout | %>
+	 	      <%= link_to '(edit)', edit_workout_path(workout) %>
+	 	      <%= link_to '(x)', workout, :confirm => 'Are you sure?', :method => :delete %><br>
+	 	    <% end %>
+	  	</td>
+		</tr>
+		<% end %>
+		<tr>
+			<td></td>
+  		<td class="actions">
+    		<%= f.submit %>
+				<%= button_to_function 'Cancel', "window.location = '" + days_path + "';" %>
+			</td>
+		</tr>
+  </table>
+<% end %>
