@@ -3,12 +3,12 @@
 # not really using for this app
 development:
   adapter: mysql
-  database: ENV['DB_DATABASE_DEV']
+  database: <%= ENV['DB_DATABASE_DEV'] %>
   pool: 5
   timeout: 5000
-  username: ENV['DB_USERNAME']
-  password: ENV['DB_PASSWORD']
-  host: ENV['DB_HOST']
+  username: <%= ENV['DB_USERNAME'] %>
+  password: <%= ENV['DB_PASSWORD'] %>
+  host: <%= ENV['DB_HOST'] %>
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -16,18 +16,18 @@ development:
 # not really using for this app
 test:
   adapter: mysql
-  database: ENV['DB_DATABASE_DEV']
+  database: <%= ENV['DB_DATABASE_DEV'] %>
   pool: 5
   timeout: 5000
-  username: ENV['DB_USERNAME']
-  password: ENV['DB_PASSWORD']
-  host: ENV['DB_HOST']
+  username: <%= ENV['DB_USERNAME'] %>
+  password: <%= ENV['DB_PASSWORD'] %>
+  host: <%= ENV['DB_HOST'] %>
 
 production:
   adapter: mysql 
-  database: ENV['DB_DATABASE']
+  database: <%= ENV['DB_DATABASE'] %>
   pool: 5
   timeout: 5000
-  username: ENV['DB_USERNAME']
-  password: ENV['DB_PASSWORD']
-  host: ENV['DB_HOST']
+  username: <%= ENV['DB_USERNAME'] %>
+  password: <%= ENV['DB_PASSWORD'] %>
+  host: <%= ENV['DB_HOST'] %>
