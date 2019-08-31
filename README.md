@@ -1,3 +1,5 @@
+# Workouts
+
 Rails app to track my running, rowing, and other daily activity.
 
 * List of workouts by date, with details and notes
