@@ -1,3 +1,5 @@
+This repository has been superseded by [Kilo](https://github.com/orangejenny/dj-orange/#kilo).
+
 # Workouts
 
 Rails app to track my running, rowing, and other daily activity.
